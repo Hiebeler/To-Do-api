@@ -8,6 +8,7 @@ import com.mongodb.DBObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -16,14 +17,10 @@ import java.util.List;
 @RequestMapping("/api/user")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
 
-
-    @GetMapping("/")
-    public User getCurrentUser(@RequestBody String email) {
-        System.out.println(email);
-        return userService.getUser(email);
+    public UserController(UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping("/all")
@@ -34,20 +31,19 @@ public class UserController {
     @DeleteMapping("/")
     public void deleteAllUsers() {
         userService.deleteAllUsers();
-        }
+    }
 
     @PutMapping("/")
-    public User addUser(@RequestParam("email") String email,
+    public String addUser(@RequestParam("email") String email,
                         @RequestParam("password") String password) {
-        String passwordHash = "";
-        try {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-            messageDigest.update(password.getBytes());
-            passwordHash = new String(messageDigest.digest());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
 
-        return userService.CreateUser(new User(email, passwordHash));
+        return userService.CreateUser(email, password);
+    }
+
+    @PostMapping("/login")
+    public User login(@RequestParam("email") String email,
+                      @RequestParam("password") String password) {
+
+        return new User(email, password.getBytes(StandardCharsets.UTF_8));
     }
 }

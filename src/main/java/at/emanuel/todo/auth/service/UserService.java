@@ -9,6 +9,9 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.query.FluentQuery;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 @Service
@@ -20,8 +23,35 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public User CreateUser(User user) {
-        return userRepository.save(user);
+    public String CreateUser(String email, String password) {
+
+        if (userRepository.findByEmail(email) != null) {
+            return "an account with this E-Mail already exists";
+        }
+
+        boolean emailIsValid = false;
+
+        for (char c : email.toCharArray()) {
+            if (c == '@') {
+                emailIsValid = true;
+                break;
+            }
+        }
+        if (!emailIsValid) {
+            return "E-Mail is not valid";
+        }
+
+
+        byte[] hash = null;
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            hash = digest.digest(password.getBytes(StandardCharsets.UTF_8));
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
+        userRepository.save(new User(email, hash));
+        return "worked";
     }
 
     public User getUser(String email) {
